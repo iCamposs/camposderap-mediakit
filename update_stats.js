@@ -75,23 +75,42 @@ async function updateStats() {
         console.error('Error updating TikTok stats:', error.message);
     }
 
-    // 3. Fetch Instagram Followers count (Attempts to scrape profile, handles block)
+    // 3. Fetch Instagram Followers count (via Instastatistics bypass to avoid Cloud IP blocks)
     try {
-        console.log('Fetching Instagram followers count...');
-        const instaHtml = await fetchUrl(`https://www.instagram.com/${username}/`);
+        console.log('Fetching Instagram followers count from Instastatistics...');
+        const instaHtml = await fetchUrl(`https://instastatistics.com/${username}`);
         
-        // Match regex: "1,361 Followers" or similar
-        const followersRegex = /([0-9.,KMB]+)\s*Followers/i;
+        // Match regex: "has 1,361 Instagram followers"
+        const followersRegex = /has\s+([0-9,.]+)\s+Instagram\s+followers/i;
         const match = instaHtml.match(followersRegex);
         
         if (match && match[1]) {
             stats.instagram_followers = match[1];
             console.log(`Instagram followers updated: ${stats.instagram_followers}`);
         } else {
-            console.log('Instagram request blocked or redirected (standard cloud-IP defense), keeping previous value.');
+            console.log('Instagram follower count not found on Instastatistics, keeping previous value.');
         }
     } catch (error) {
-        console.error('Error updating Instagram stats:', error.message);
+        console.error('Error updating Instagram stats from Instastatistics:', error.message);
+    }
+
+    // 3.5 Fetch Facebook Page followers count (via public page plugin embed)
+    try {
+        console.log('Fetching Facebook Page followers count...');
+        const fbPluginHtml = await fetchUrl('https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fprofile.php%3Fid%3D61584289191954&tabs&width=340&height=130&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true');
+        
+        // Match regex: "20 seguidores"
+        const fbRegex = /([0-9.,KMB]+)\s*seguidores/i;
+        const match = fbPluginHtml.match(fbRegex);
+        
+        if (match && match[1]) {
+            stats.facebook_likes = match[1];
+            console.log(`Facebook followers updated: ${stats.facebook_likes}`);
+        } else {
+            console.log('Facebook follower count not found in plugin HTML, keeping previous value.');
+        }
+    } catch (error) {
+        console.error('Error updating Facebook stats:', error.message);
     }
 
     // 4. Save updated stats to stats.json

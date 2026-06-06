@@ -64,25 +64,72 @@ document.addEventListener("DOMContentLoaded", () => {
         const name = document.getElementById("name").value;
         const email = document.getElementById("email").value;
         const message = document.getElementById("message").value;
+        const submitBtn = contactForm.querySelector('button[type="submit"]');
 
-        // Simular envío rápido
-        modalStatusText.innerHTML = `¡Hola <strong>${name}</strong>!<br><br>Hemos registrado tu propuesta en nuestro sistema local.<br><br>Te responderemos lo antes posible a <strong>${email}</strong> para coordinar las especificaciones y arrancar el análisis musical.`;
-        
-        // Guardar propuesta en localStorage
-        const lead = { name, email, message, date: new Date().toISOString() };
-        const leads = JSON.parse(localStorage.getItem("camposderap_leads") || "[]");
-        leads.push(lead);
-        localStorage.setItem("camposderap_leads", JSON.stringify(leads));
+        // Desactivar botón y mostrar estado de envío
+        const originalBtnText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Enviando propuesta...";
 
-        // Mostrar Modal
-        successModal.classList.add("active");
+        // Obtener servicios seleccionados de la calculadora
+        const selectedServices = [];
+        checkboxes.forEach((cb) => {
+            if (cb.checked) {
+                const card = cb.closest(".service-item");
+                const srvName = card.querySelector(".service-name").textContent;
+                const price = cb.dataset.price;
+                selectedServices.push(`${srvName} ($${price} USD)`);
+            }
+        });
+        const totalBudget = totalPriceEl.textContent;
 
-        // Reiniciar formulario
-        contactForm.reset();
-        
-        // Deseleccionar servicios en la calculadora
-        checkboxes.forEach(cb => cb.checked = false);
-        updateCalculator();
+        // Enviar propuesta a FormSubmit.co
+        fetch("https://formsubmit.co/ajax/camposderapcontacto@gmail.com", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({
+                Nombre: name,
+                Email: email,
+                Mensaje: message,
+                "Servicios Seleccionados": selectedServices.join(", ") || "Ninguno",
+                "Presupuesto Estimado": totalBudget,
+                _subject: `Nueva Propuesta de Colaboración - ${name}`
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Error en la respuesta del servidor");
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Actualizar texto del modal de éxito
+            modalStatusText.innerHTML = `¡Hola <strong>${name}</strong>!<br><br>Tu propuesta ha sido enviada con éxito directamente a <strong>camposderapcontacto@gmail.com</strong>.<br><br>Te responderemos lo antes posible a <strong>${email}</strong> para coordinar las especificaciones y comenzar a trabajar juntos.`;
+            
+            // Mostrar Modal
+            successModal.classList.add("active");
+
+            // Reiniciar formulario
+            contactForm.reset();
+            
+            // Deseleccionar servicios en la calculadora
+            checkboxes.forEach(cb => cb.checked = false);
+            updateCalculator();
+        })
+        .catch(error => {
+            console.error("Error al enviar formulario:", error);
+            // Mensaje de respaldo amigable
+            modalStatusText.innerHTML = `¡Hola <strong>${name}</strong>!<br><br>Hubo un problema temporal al enviar el formulario automáticamente.<br><br>Por favor, copia tu propuesta y envíala directamente a: <strong>camposderapcontacto@gmail.com</strong>.`;
+            successModal.classList.add("active");
+        })
+        .finally(() => {
+            // Restaurar botón
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+        });
     });
 
     // Cerrar Modal
@@ -106,25 +153,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const videosList = [
         {
-            src: "gona.mp4",
-            title: "@camposderap | Análisis: Gona",
-            views: "32.4K",
-            likes: "4.1K",
-            comments: "280"
+            src: "salsa_neutro.mp4",
+            title: "@camposderap | Salsa de Neutro",
+            views: "58.4K",
+            likes: "915",
+            comments: "71"
         },
         {
-            src: "sabia_escuela.mp4",
-            title: "@camposderap | La Sabia Escuela",
-            views: "21.8K",
-            likes: "2.8K",
-            comments: "195"
+            src: "pez_fuma.mp4",
+            title: "@camposderap | El Pez que Fuma",
+            views: "13.4K",
+            likes: "1,557",
+            comments: "71"
         },
         {
-            src: "rapiam.mp4",
-            title: "@camposderap | Rap I Am",
-            views: "18.5K",
-            likes: "1.9K",
-            comments: "140"
+            src: "faker.mp4",
+            title: "@camposderap | Faker",
+            views: "8,393",
+            likes: "443",
+            comments: "50"
         }
     ];
 
